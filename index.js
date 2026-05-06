@@ -1,20 +1,20 @@
-import { google } from '@ai-sdk/google';
+import { createGoogle } from '@ai-sdk/google'; // Import 'createGoogle' instead of just 'google'
 import { generateText } from 'ai';
 
+// Create a custom Google instance using your specific variable name
+const google = createGoogle({
+  apiKey: process.env.GEMINI_API_KEY, 
+});
+
 export default async function handler(req, res) {
-  // 1. Get the subject from the request
   const { subject } = req.body;
 
   try {
     const { text } = await generateText({
-      model: google('gemini-1.5-flash'),
-      prompt: `Act as a strict A-Level examiner for Flexi Educational Consult. 
-               Generate one complex multiple-choice question for ${subject}. 
-               Return only a JSON object like this: 
-               {"question": "...", "options": {"A": "...", "B": "...", "C": "...", "D": "..."}, "answer": "A"}`,
+      model: google('gemini-1.5-flash'), // Now it uses your GEMINI_API_KEY
+      prompt: `Act as a strict A-Level examiner. Generate one complex multiple-choice question for ${subject}. Return ONLY JSON: {"question": "...", "options": {"A": "...", "B": "...", "C": "...", "D": "..."}, "answer": "A"}`,
     });
 
-    // Clean and return the JSON
     const cleanJson = JSON.parse(text.replace(/```json|```/g, ""));
     res.status(200).json(cleanJson);
   } catch (error) {
