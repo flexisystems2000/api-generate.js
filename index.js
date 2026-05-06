@@ -1,23 +1,36 @@
-import { createGoogle } from '@ai-sdk/google'; // Import 'createGoogle' instead of just 'google'
+import { createGoogle } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
-// Create a custom Google instance using your specific variable name
+// This links the code to the variable you just created in your screenshot
 const google = createGoogle({
-  apiKey: process.env.GEMINI_API_KEY, 
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 export default async function handler(req, res) {
+  // Allow requests from your Render frontend
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const { subject } = req.body;
 
   try {
     const { text } = await generateText({
-      model: google('gemini-1.5-flash'), // Now it uses your GEMINI_API_KEY
-      prompt: `Act as a strict A-Level examiner. Generate one complex multiple-choice question for ${subject}. Return ONLY JSON: {"question": "...", "options": {"A": "...", "B": "...", "C": "...", "D": "..."}, "answer": "A"}`,
+      model: google('gemini-1.5-flash'),
+      prompt: `Act as a senior A-Level examiner for Flexi Educational Consult. 
+               Generate one extremely difficult multiple-choice question for ${subject || 'General Intelligence'}. 
+               Return ONLY a JSON object: {"question": "...", "options": {"A": "...", "B": "...", "C": "...", "D": "..."}, "answer": "A"}`,
     });
 
+    // Clean Gemini's response and send it to your exam page
     const cleanJson = JSON.parse(text.replace(/```json|```/g, ""));
     res.status(200).json(cleanJson);
   } catch (error) {
-    res.status(500).json({ error: "AI failed to dish question" });
+    console.error(error);
+    res.status(500).json({ error: "The Examiner is busy. Try again." });
   }
 }
